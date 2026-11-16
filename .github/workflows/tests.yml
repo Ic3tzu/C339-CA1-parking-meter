@@ -1,0 +1,47 @@
+name: Unit tests
+
+# Advanced feature: fewer, more useful test runs.
+# 1. Run on pushes to main and on pull requests into main only.
+#    A push to a branch that has an open pull request no longer runs the tests twice.
+# 2. "paths" filter: only run when code, tests, dependencies or this workflow change.
+#    Editing the README or the Test Plan does not start a run.
+# 3. "concurrency": if a newer push arrives while a run is still going,
+#    the older run is cancelled because its result is already out of date.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "requirements.txt"
+      - ".github/workflows/tests.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "requirements.txt"
+      - ".github/workflows/tests.yml"
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests with coverage
+        run: python -m pytest -v --cov=src --cov-report=term-missing
